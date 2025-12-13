@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Вход в систему - Фитнес Платформа{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h2><i class="fas fa-sign-in-alt me-2"></i>Вход в систему</h2>
+                    <p class="mb-0">Введите свои учетные данные</p>
+                </div>
+                
+                <div class="auth-body">
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email адрес
+                            </label>
+                            {{ form.email(class="form-control", placeholder="Введите ваш email") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Пароль
+                            </label>
+                            {{ form.password(class="form-control", placeholder="Введите пароль") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.remember(class="form-check-input") }}
+                            <label class="form-check-label" for="remember">
+                                Запомнить меня
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Войти
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-decoration-none">
+                            <i class="fas fa-key me-1"></i>Забыли пароль?
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="auth-footer">
+                    <p class="mb-0">
+                        Еще нет аккаунта? 
+                        <a href="{{ url_for('auth.register') }}" class="text-decoration-none fw-bold">
+                            Зарегистрироваться
+                        </a>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>Вернуться на главную
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Фокус на поле email при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('email').focus();
+});
+</script>
+{% endblock %}

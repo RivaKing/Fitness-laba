@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Создать тренировку - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        color: #495057;
+        border-bottom: 2px solid #4e73df;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
+    
+    .equipment-item, .contraindication-item {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Создать новую тренировку</h4>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('trainings.create_training') }}" id="trainingForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Основная информация -->
+                        <div class="form-section">
+                            <h4 class="section-title">Основная информация</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Название тренировки *</label>
+                                {{ form.title(class="form-control", placeholder="Например: Утренняя йога для начинающих") }}
+                                {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Категория *</label>
+                                    {{ form.category_id(class="form-select") }}
+                                    {% if form.category_id.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.category_id.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Тип тренировки *</label>
+                                    {{ form.training_type(class="form-select") }}
+                                    {% if form.training_type.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.training_type.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Сложность *</label>
+                                    {{ form.difficulty(class="form-select") }}
+                                    {% if form.difficulty.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.difficulty.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Интенсивность</label>
+                                    {{ form.intensity(class="form-select") }}
+                                    {% if form.intensity.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.intensity.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Описание -->
+                        <div class="form-section">
+                            <h4 class="section-title">Описание</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Краткое описание</label>
+                                {{ form.short_description(class="form-control", rows="2", placeholder="Краткое описание, которое будет отображаться в списках") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Полное описание *</label>
+                                {{ form.description(class="form-control", rows="4", placeholder="Подробное описание тренировки, программа, преимущества...") }}
+                                {% if form.description.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.description.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Расписание -->
+                        <div class="form-section">
+                            <h4 class="section-title">Расписание</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Дата и время начала *</label>
+                                    {{ form.schedule_time(class="form-control", id="scheduleTime") }}
+                                    {% if form.schedule_time.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.schedule_time.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Длительность (минут) *</label>
+                                    {{ form.duration(class="form-control", type="number", min="15", max="240", placeholder="15-240") }}
+                                    {% if form.duration.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.duration.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Часовой пояс</label>
+                                    {{ form.timezone(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Участники -->
+                        <div class="form-section">
+                            <h4 class="section-title">Участники</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Максимальное количество участников *</label>
+                                    {{ form.max_participants(class="form-control", type="number", min="1", max="100", value="10") }}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Минимальное количество участников</label>
+                                    {{ form.min_participants(class="form-control", type="number", min="1", max="10", value="1") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Минимальный возраст</label>
+                                    {{ form.age_limit_min(class="form-control", type="number", min="0", max="100") }}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Максимальный возраст</label>
+                                    {{ form.age_limit_max(class="form-control", type="number", min="0", max="100") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Стоимость -->
+                        <div class="form-section">
+                            <h4 class="section-title">Стоимость</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Цена (₽)</label>
+                                    {{ form.price(class="form-control", type="number", min="0", step="0.01", value="0") }}
+                                    <div class="form-text">0 ₽ - бесплатная тренировка</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Валюта</label>
+                                    {{ form.currency(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Оборудование и ограничения -->
+                        <div class="form-section">
+                            <h4 class="section-title">Оборудование и ограничения</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Необходимое оборудование</label>
+                                <div id="equipmentContainer">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="equipment[]" placeholder="Например: коврик для йоги, гантели">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeEquipment(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEquipment()">
+                                    <i class="fas fa-plus"></i> Добавить оборудование
+                                </button>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Медицинские противопоказания</label>
+                                <div id="contraindicationsContainer">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="contraindications[]" placeholder="Например: беременность, проблемы с сердцем">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeContraindication(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addContraindication()">
+                                    <i class="fas fa-plus"></i> Добавить противопоказание
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Ссылки -->
+                        <div class="form-section">
+                            <h4 class="section-title">Ссылки</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Ссылка на видео (YouTube, Vimeo)</label>
+                                {{ form.video_link(class="form-control", placeholder="https://youtube.com/...") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Ссылка на онлайн-конференцию</label>
+                                {{ form.meeting_link(class="form-control", placeholder="https://zoom.us/... или https://meet.google.com/...") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Ссылка на дополнительные материалы</label>
+                                {{ form.materials_link(class="form-control", placeholder="https://drive.google.com/...") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Теги и метаданные -->
+                        <div class="form-section">
+                            <h4 class="section-title">Метаданные</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Ключевые слова (через запятую)</label>
+                                {{ form.keywords(class="form-control", placeholder="йога, утро, для начинающих, растяжка") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Язык</label>
+                                {{ form.language(class="form-select") }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>Создать тренировку
+                            </button>
+                            <a href="{{ url_for('trainings.training_list') }}" class="btn btn-outline-secondary">
+                                Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+<script>
+// Инициализация datetime picker
+flatpickr("#scheduleTime", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    time_24hr: true,
+    locale: "ru",
+    minDate: "today"
+});
+
+// Динамическое добавление оборудования
+function addEquipment() {
+    const container = document.getElementById('equipmentContainer');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="equipment[]" placeholder="Например: коврик для йоги, гантели">
+        <button type="button" class="btn btn-outline-danger" onclick="removeEquipment(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+function removeEquipment(button) {
+    button.parentElement.remove();
+}
+
+// Динамическое добавление противопоказаний
+function addContraindication() {
+    const container = document.getElementById('contraindicationsContainer');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="contraindications[]" placeholder="Например: беременность, проблемы с сердцем">
+        <button type="button" class="btn btn-outline-danger" onclick="removeContraindication(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+function removeContraindication(button) {
+    button.parentElement.remove();
+}
+
+// Предзагрузка данных формы
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление начального поля для оборудования
+    addEquipment();
+    addContraindication();
+    
+    // Валидация формы
+    const form = document.getElementById('trainingForm');
+    form.addEventListener('submit', function(e) {
+        const title = document.querySelector('[name="title"]').value;
+        const description = document.querySelector('[name="description"]').value;
+        const scheduleTime = document.querySelector('[name="schedule_time"]').value;
+        const duration = document.querySelector('[name="duration"]').value;
+        
+        if (!title || !description || !scheduleTime || !duration) {
+            e.preventDefault();
+            alert('Пожалуйста, заполните все обязательные поля (отмечены *)');
+            return false;
+        }
+        
+        return true;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Фитнес Платформа{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="m-0">
+                    <i class="fas fa-home me-2"></i>Добро пожаловать, {{ current_user.username }}!
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Добро пожаловать в Фитнес Платформу!</p>
+                <p>Здесь вы можете:</p>
+                <ul>
+                    <li>Записываться на онлайн-тренировки</li>
+                    <li>Отслеживать свой прогресс</li>
+                    <li>Ставить цели и достигать их</li>
+                    <li>Взаимодействовать с профессиональными тренерами</li>
+                </ul>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('trainings.training_list') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-running me-2"></i>Найти тренировки
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('progress.dashboard') }}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-chart-line me-2"></i>Мой прогресс
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="m-0">
+                    <i class="fas fa-bolt me-2"></i>Быстрые действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ url_for('trainings.my_trainings') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-check me-2"></i>Мои тренировки
+                    </a>
+                    <a href="{{ url_for('auth.profile') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i>Мой профиль
+                    </a>
+                    {% if current_user.role == 'trainer' %}
+                    <a href="{{ url_for('trainings.create_training') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle me-2"></i>Создать тренировку
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Мои цели - Фитнес Платформа{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-bullseye me-2"></i>Мои цели</h1>
+        <a href="{{ url_for('progress.add_goal') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Добавить цель
+        </a>
+    </div>
+    
+    <!-- Фильтры по статусу -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('progress.goals', status='all') }}" 
+                   class="btn {% if status_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Все ({{ stats.total }})
+                </a>
+                <a href="{{ url_for('progress.goals', status='active') }}" 
+                   class="btn {% if status_filter == 'active' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    Активные ({{ stats.active }})
+                </a>
+                <a href="{{ url_for('progress.goals', status='completed') }}" 
+                   class="btn {% if status_filter == 'completed' %}btn-info{% else %}btn-outline-info{% endif %}">
+                    Завершенные ({{ stats.completed }})
+                </a>
+                <a href="{{ url_for('progress.goals', status='failed') }}" 
+                   class="btn {% if status_filter == 'failed' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    Невыполненные ({{ stats.failed }})
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список целей -->
+    {% if goals %}
+    <div class="row">
+        {% for goal in goals %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ goal.title }}</h5>
+                    <span class="badge 
+                        {% if goal.status == 'active' %}bg-success
+                        {% elif goal.status == 'completed' %}bg-info
+                        {% else %}bg-danger{% endif %}">
+                        {{ goal.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if goal.description %}
+                    <p class="card-text">{{ goal.description }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>Прогресс</small>
+                            <small>{{ goal.progress_percentage|int }}%</small>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar 
+                                {% if goal.progress_percentage >= 100 %}bg-success
+                                {% elif goal.progress_percentage >= 50 %}bg-info
+                                {% else %}bg-warning{% endif %}" 
+                                 style="width: {{ goal.progress_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <small class="text-muted">Цель</small>
+                            <h6>{{ goal.target_value }} {{ goal.unit }}</h6>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Текущее</small>
+                            <h6>{{ goal.current_value or 0 }} {{ goal.unit }}</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            До {{ goal.target_date.strftime('%d.%m.%Y') }}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('progress.goal_detail', goal_id=goal.id) }}" 
+                       class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-info-circle me-2"></i>Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-bullseye fa-3x text-muted mb-3"></i>
+        <h3 class="mb-3">Нет целей</h3>
+        <p class="text-muted mb-4">Создайте свою первую цель</p>
+        <a href="{{ url_for('progress.add_goal') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Добавить цель
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

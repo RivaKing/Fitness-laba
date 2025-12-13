@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Мои тренировки - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .training-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .training-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .training-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-upcoming {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .training-type-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-right: 5px;
+    }
+    
+    .calendar-icon {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-right: 8px;
+    }
+    
+    .training-time {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px 0;
+    }
+    
+    .trainer-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 10px;
+    }
+    
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 20px;
+        padding: 8px 20px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        transition: all 0.3s;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #4e73df;
+        border-color: #4e73df;
+        color: white;
+    }
+    
+    .training-image {
+        height: 180px;
+        object-fit: cover;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-dumbbell text-primary me-2"></i>Мои тренировки
+            </h2>
+            <p class="text-muted mb-0">Управление вашими тренировками и расписанием</p>
+        </div>
+        
+        <div>
+            <a href="{{ url_for('trainings.calendar') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar-alt me-1"></i>Календарь
+            </a>
+            <a href="{{ url_for('trainings.training_list') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Найти тренировки
+            </a>
+        </div>
+    </div>
+    
+    <!-- Навигация -->
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status', 'upcoming') == 'upcoming' %}active{% endif %}" 
+               href="{{ url_for('trainings.my_trainings', status='upcoming') }}">
+                <i class="fas fa-clock me-1"></i>Предстоящие
+                <span class="badge bg-secondary ms-1">{{ upcoming_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status') == 'past' %}active{% endif %}" 
+               href="{{ url_for('trainings.my_trainings', status='past') }}">
+                <i class="fas fa-history me-1"></i>Прошедшие
+                <span class="badge bg-secondary ms-1">{{ past_count }}</span>
+            </a>
+        </li>
+        {% if current_user.is_trainer %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status') == 'created' %}active{% endif %}" 
+               href="{{ url_for('trainings.my_trainings', status='created') }}">
+                <i class="fas fa-user-tie me-1"></i>Созданные мной
+                <span class="badge bg-secondary ms-1">{{ created_count }}</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+    
+    <!-- Предстоящие тренировки -->
+    {% if request.args.get('status', 'upcoming') == 'upcoming' %}
+    <div class="mb-5">
+        <h4 class="mb-3">Предстоящие тренировки</h4>
+        
+        {% if upcoming_registrations %}
+            <div class="row">
+                {% for registration in upcoming_registrations %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card training-card h-100">
+                        <div class="position-relative">
+                            {% if registration.training.image_url %}
+                                <img src="{{ registration.training.image_url }}" class="card-img-top training-image" alt="{{ registration.training.title }}">
+                            {% else %}
+                                <div class="training-image bg-light d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-running fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <span class="training-status status-upcoming">
+                                <i class="fas fa-clock me-1"></i>Предстоит
+                            </span>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ registration.training.title }}</h5>
+                            
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="{{ registration.training.trainer_creator.profile.avatar_url if registration.training.trainer_creator.profile and registration.training.trainer_creator.profile.avatar_url else url_for('static', filename='img/default-avatar.png') }}" 
+                                     alt="{{ registration.training.trainer_creator.username }}" class="trainer-avatar">
+                                <div>
+                                    <small class="text-muted">Тренер</small>
+                                    <div class="fw-bold">{{ registration.training.trainer_creator.username }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="training-time">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-day calendar-icon"></i>
+                                    <div>
+                                        <small class="text-muted">Дата и время</small>
+                                        <div>{{ registration.training.schedule_time.strftime('%d.%m.%Y %H:%M') }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock calendar-icon"></i>
+                                    <div>
+                                        <small class="text-muted">Длительность</small>
+                                        <div>{{ registration.training.duration }} минут</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge bg-primary">{{ registration.training.training_type }}</span>
+                                <div>
+                                    <a href="{{ url_for('trainings.detail', training_id=registration.training.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">Подробнее</a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#cancelModal{{ registration.id }}">
+                                        Отменить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Модальное окно отмены -->
+                <div class="modal fade" id="cancelModal{{ registration.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Отмена регистрации</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Вы уверены, что хотите отменить регистрацию на тренировку?</p>
+                                <p><strong>{{ registration.training.title }}</strong></p>
+                                <p class="text-muted">{{ registration.training.schedule_time.strftime('%d.%m.%Y %H:%M') }}</p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Причина отмены</label>
+                                    <textarea class="form-control" rows="3" placeholder="Необязательно"></textarea>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Отмена возможна не менее чем за 1 час до начала тренировки.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                <form action="{{ url_for('trainings.cancel_registration', training_id=registration.training.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger">Да, отменить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+                <h4>Нет предстоящих тренировок</h4>
+                <p class="mb-4">Найдите и запишитесь на интересующие вас тренировки</p>
+                <a href="{{ url_for('trainings.training_list') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>Найти тренировки
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Прошедшие тренировки -->
+    {% if request.args.get('status') == 'past' %}
+    <div class="mb-5">
+        <h4 class="mb-3">Прошедшие тренировки</h4>
+        
+        {% if past_registrations %}
+            <div class="row">
+                {% for registration in past_registrations %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card training-card h-100">
+                        <div class="position-relative">
+                            {% if registration.training.image_url %}
+                                <img src="{{ registration.training.image_url }}" class="card-img-top training-image" alt="{{ registration.training.title }}">
+                            {% else %}
+                                <div class="training-image bg-light d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-running fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <span class="training-status status-completed">
+                                <i class="fas fa-check me-1"></i>Завершена
+                            </span>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ registration.training.title }}</h5>
+                            
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="{{ registration.training.trainer_creator.profile.avatar_url if registration.training.trainer_creator.profile and registration.training.trainer_creator.profile.avatar_url else url_for('static', filename='img/default-avatar.png') }}" 
+                                     alt="{{ registration.training.trainer_creator.username }}" class="trainer-avatar">
+                                <div>
+                                    <small class="text-muted">Тренер</small>
+                                    <div class="fw-bold">{{ registration.training.trainer_creator.username }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="training-time">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-day calendar-icon"></i>
+                                    <div>
+                                        <small class="text-muted">Дата проведения</small>
+                                        <div>{{ registration.training.schedule_time.strftime('%d.%m.%Y %H:%M') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if registration.status == 'attended' %}
+                                <div class="alert alert-success mb-3 py-2">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    <small>Вы посетили эту тренировку</small>
+                                </div>
+                                
+                                {% if not registration.feedback %}
+                                    <div class="alert alert-info mb-3 py-2">
+                                        <i class="fas fa-star me-1"></i>
+                                        <small>Оставьте отзыв о тренировке</small>
+                                        <a href="{{ url_for('trainings.detail', training_id=registration.training.id) }}#feedback" 
+                                           class="btn btn-sm btn-outline-primary mt-2">
+                                            Написать отзыв
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge bg-secondary">{{ registration.training.training_type }}</span>
+                                <a href="{{ url_for('trainings.detail', training_id=registration.training.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">Подробнее</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h4>Нет прошедших тренировок</h4>
+                <p class="mb-4">Здесь будут отображаться тренировки, которые вы посетили</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Тренировки, созданные пользователем (для тренеров) -->
+    {% if current_user.is_trainer and request.args.get('status') == 'created' %}
+    <div class="mb-5">
+        <h4 class="mb-3">Тренировки, созданные мной</h4>
+        
+        {% if created_trainings %}
+            <div class="row">
+                {% for training in created_trainings %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card training-card h-100">
+                        <div class="position-relative">
+                            {% if training.image_url %}
+                                <img src="{{ training.image_url }}" class="card-img-top training-image" alt="{{ training.title }}">
+                            {% else %}
+                                <div class="training-image bg-light d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-running fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            
+                            {% if training.status == 'active' %}
+    <span class="training-status status-upcoming">
+        <i class="fas fa-play me-1"></i>Активна
+    </span>
+{% elif training.status == 'completed' %}
+    <span class="training-status status-completed">
+        <i class="fas fa-check me-1"></i>Завершена
+    </span>
+{% elif training.status == 'cancelled' %}
+    <span class="training-status status-cancelled">
+        <i class="fas fa-times me-1"></i>Отменена
+    </span>
+{% endif %}  <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ training.title }}</h5>
+                            
+                            <div class="training-time mb-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-day calendar-icon"></i>
+                                    <div>
+                                        <small class="text-muted">Дата и время</small>
+                                        <div>{{ training.schedule_time.strftime('%d.%m.%Y %H:%M') }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-users calendar-icon"></i>
+                                        <div>
+                                            <small class="text-muted">Участники</small>
+                                            <div>{{ training.registrations_count }}/{{ training.max_participants }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if training.price > 0 %}
+                                        <div class="fw-bold text-success">
+                                            {{ training.price }} {{ training.currency }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge bg-primary">{{ training.training_type }}</span>
+                                <div>
+                                    <a href="{{ url_for('trainings.detail', training_id=training.id) }}" 
+                                       class="btn btn-sm btn-outline-primary me-1">Просмотр</a>
+                                    {% if training.status == 'draft' %}
+                                        <a href="#" class="btn btn-sm btn-warning">Редактировать</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if pagination.pages > 1 %}
+                <nav aria-label="Навигация по страницам" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('trainings.my_trainings', status='created', page=pagination.prev_num) }}">Назад</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('trainings.my_trainings', status='created', page=page) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('trainings.my_trainings', status='created', page=pagination.next_num) }}">Вперед</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <h4>Нет созданных тренировок</h4>
+                <p class="mb-4">Создайте свою первую тренировку</p>
+                <a href="{{ url_for('trainings.create_training') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Создать тренировку
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% if not (upcoming_registrations or past_registrations or created_trainings) %}
+<div class="text-center mt-5">
+    <a href="{{ url_for('trainings.training_list') }}" class="btn btn-lg btn-primary">
+        <i class="fas fa-search me-2"></i>Найти тренировки
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Подтверждение отмены регистрации
+document.querySelectorAll('form[action*="cancel"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        if (!confirm('Вы уверены, что хотите отменить регистрацию?')) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Фильтрация тренировок
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('trainingSearch');
+    const trainingCards = document.querySelectorAll('.training-card');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            trainingCards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const trainer = card.querySelector('.fw-bold').textContent.toLowerCase();
+                const type = card.querySelector('.badge').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || trainer.includes(searchTerm) || type.includes(searchTerm)) {
+                    card.parentElement.style.display = 'block';
+                } else {
+                    card.parentElement.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

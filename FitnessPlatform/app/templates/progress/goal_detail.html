@@ -1,0 +1,275 @@
+[file name]: goal_detail.html
+[file content begin]
+{% extends "base.html" %}
+
+{% block title %}Цель: {{ goal.title }} - Фитнес Платформа{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('progress.dashboard') }}">Дашборд</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('progress.goals') }}">Цели</a></li>
+            <li class="breadcrumb-item active">{{ goal.title|truncate(30) }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Заголовок и статус -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>{{ goal.title }}</h1>
+                <span class="badge fs-6 
+                    {% if goal.status == 'active' %}bg-success
+                    {% elif goal.status == 'completed' %}bg-info
+                    {% else %}bg-danger{% endif %}">
+                    {{ goal.status|title }}
+                </span>
+            </div>
+            
+            {% if goal.description %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Описание</h5>
+                    <p class="card-text">{{ goal.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Детали цели</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Тип цели</small>
+                        <h6 class="mb-0">{{ goal.goal_type|title }}</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Дата начала</small>
+                        <h6 class="mb-0">{{ goal.start_date.strftime('%d.%m.%Y') }}</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Целевая дата</small>
+                        <h6 class="mb-0">{{ goal.target_date.strftime('%d.%m.%Y') }}</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Создано</small>
+                        <h6 class="mb-0">{{ goal.created_at.strftime('%d.%m.%Y') }}</h6>
+                    </div>
+                    
+                    {% if goal.completed_at %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Завершено</small>
+                        <h6 class="mb-0">{{ goal.completed_at.strftime('%d.%m.%Y') }}</h6>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Прогресс -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Прогресс выполнения</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <h6>Текущий прогресс</h6>
+                            <h6 class="text-primary">{{ goal.progress_percentage|int }}%</h6>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar 
+                                {% if goal.progress_percentage >= 100 %}bg-success
+                                {% elif goal.progress_percentage >= 50 %}bg-info
+                                {% else %}bg-warning{% endif %}" 
+                                 style="width: {{ goal.progress_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Текущее значение</small>
+                                <h4 class="mb-0">{{ goal.current_value or 0 }} {{ goal.unit }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Целевое значение</small>
+                                <h4 class="mb-0">{{ goal.target_value }} {{ goal.unit }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Форма обновления прогресса -->
+                    {% if goal.status == 'active' %}
+                    <div class="mt-4">
+                        <h6><i class="fas fa-edit me-2"></i>Обновить прогресс</h6>
+                        <form method="POST" action="{{ url_for('progress.update_goal_progress', goal_id=goal.id) }}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="current_value" class="form-label">Текущее значение</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="current_value" 
+                                               value="{{ goal.current_value or 0 }}" step="0.1" required>
+                                        <span class="input-group-text">{{ goal.unit }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="progress_date" class="form-label">Дата прогресса</label>
+                                    <input type="date" class="form-control" name="progress_date" 
+                                           value="{{ today }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="notes" class="form-label">Заметки (опционально)</label>
+                                    <textarea class="form-control" name="notes" rows="2" 
+                                              placeholder="Добавьте заметки о вашем прогрессе..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Обновить прогресс
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- История обновлений прогресса -->
+            {% if goal.updates %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">История обновлений</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for update in goal.updates|sort(attribute='date', reverse=true) %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ update.date.strftime('%d.%m.%Y') }}</h6>
+                                <span class="badge bg-primary">
+                                    {{ update.value }} {{ goal.unit }}
+                                </span>
+                            </div>
+                            {% if update.notes %}
+                            <p class="mb-0 text-muted">{{ update.notes }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Действия с целью -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if goal.status == 'active' %}
+                        <a href="{{ url_for('progress.mark_goal_complete', goal_id=goal.id) }}" 
+                           class="btn btn-success" onclick="return confirm('Вы уверены, что хотите отметить цель как выполненную?')">
+                            <i class="fas fa-check me-2"></i>Отметить как выполненную
+                        </a>
+                        
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#extendModal">
+                            <i class="fas fa-calendar-plus me-2"></i>Продлить срок
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('progress.edit_goal', goal_id=goal.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>Редактировать
+                        </a>
+                        
+                        <a href="{{ url_for('progress.delete_goal', goal_id=goal.id) }}" 
+                           class="btn btn-outline-danger" onclick="return confirm('Вы уверены, что хотите удалить эту цель?')">
+                            <i class="fas fa-trash me-2"></i>Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Дней с начала</small>
+                        <h6 class="mb-0">{{ days_since_start }}</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Дней до дедлайна</small>
+                        <h6 class="mb-0 {% if days_until_target < 7 %}text-danger{% elif days_until_target < 30 %}text-warning{% endif %}">
+                            {{ days_until_target }}
+                        </h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Средний прогресс в день</small>
+                        <h6 class="mb-0">{{ avg_progress_per_day }} {{ goal.unit }}/день</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Требуемый темп</small>
+                        <h6 class="mb-0 {% if required_daily_progress > avg_progress_per_day %}text-danger{% else %}text-success{% endif %}">
+                            {{ required_daily_progress }} {{ goal.unit }}/день
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно продления срока -->
+<div class="modal fade" id="extendModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Продлить срок выполнения</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('progress.extend_goal_deadline', goal_id=goal.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="new_target_date" class="form-label">Новая целевая дата</label>
+                        <input type="date" class="form-control" name="new_target_date" 
+                               value="{{ goal.target_date.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Причина продления (опционально)</label>
+                        <textarea class="form-control" name="reason" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+[file content end]

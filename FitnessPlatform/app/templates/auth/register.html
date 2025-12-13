@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        color: #495057;
+        border-bottom: 2px solid #4e73df;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
+    
+    .password-strength {
+        height: 5px;
+        background: #e9ecef;
+        border-radius: 3px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+    
+    .role-card {
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+    
+    .role-card:hover {
+        border-color: #4e73df;
+        transform: translateY(-2px);
+    }
+    
+    .role-card.selected {
+        border-color: #4e73df;
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    /* Скрываем стандартное поле выбора роли */
+    #roleField {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h2><i class="fas fa-user-plus me-2"></i>Регистрация</h2>
+                    <p class="mb-0">Создайте новый аккаунт</p>
+                </div>
+                
+                <div class="auth-body">
+                    <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Скрытое поле для роли (будет заполняться JavaScript) -->
+                        {{ form.role(id="roleField", value="client") }}
+                        {% if form.role.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.role.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Основная информация -->
+                        <div class="form-section">
+                            <h4 class="section-title">Основная информация</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-user me-1"></i>Имя пользователя *
+                                    </label>
+                                    {{ form.username(class="form-control", placeholder="Придумайте логин") }}
+                                    <div class="form-text">Только буквы, цифры и подчеркивания</div>
+                                    {% if form.username.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.username.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>Email адрес *
+                                    </label>
+                                    {{ form.email(class="form-control", placeholder="example@mail.com") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-user-tag me-1"></i>Полное имя *
+                                    </label>
+                                    {{ form.full_name(class="form-control", placeholder="Иванов Иван Иванович") }}
+                                    {% if form.full_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.full_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-phone me-1"></i>Телефон
+                                    </label>
+                                    {{ form.phone(class="form-control", placeholder="+7 (999) 123-45-67") }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-birthday-cake me-1"></i>Дата рождения *
+                                    </label>
+                                    {{ form.date_of_birth(class="form-control", type="date") }}
+                                    {% if form.date_of_birth.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.date_of_birth.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-venus-mars me-1"></i>Пол *
+                                    </label>
+                                    {{ form.gender(class="form-select") }}
+                                    {% if form.gender.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.gender.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Пароль -->
+                        <div class="form-section">
+                            <h4 class="section-title">Безопасность</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock me-1"></i>Пароль *
+                                    </label>
+                                    {{ form.password(class="form-control", placeholder="Минимум 8 символов", id="password") }}
+                                    <div class="password-strength">
+                                        <div class="password-strength-bar" id="passwordStrength"></div>
+                                    </div>
+                                    {% if form.password.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.password.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock me-1"></i>Подтверждение пароля *
+                                    </label>
+                                    {{ form.confirm_password(class="form-control", placeholder="Повторите пароль") }}
+                                    {% if form.confirm_password.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.confirm_password.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Требования к паролю:</strong>
+                                <ul class="mb-0 mt-1">
+                                    <li>Минимум 8 символов</li>
+                                    <li>Содержит заглавные и строчные буквы</li>
+                                    <li>Содержит хотя бы одну цифру</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Роль пользователя (только иконки) -->
+                        <div class="form-section">
+                            <h4 class="section-title">Тип аккаунта *</h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card role-card text-center p-3" data-role="client">
+                                                <i class="fas fa-user fa-3x mb-3 text-primary"></i>
+                                                <h5>Клиент</h5>
+                                                <p class="text-muted small">Участвуйте в тренировках, отслеживайте прогресс</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card role-card text-center p-3" data-role="trainer">
+                                                <i class="fas fa-user-tie fa-3x mb-3 text-success"></i>
+                                                <h5>Тренер</h5>
+                                                <p class="text-muted small">Создавайте тренировки, работайте с клиентами</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card role-card text-center p-3" data-role="admin">
+                                                <i class="fas fa-user-shield fa-3x mb-3 text-danger"></i>
+                                                <h5>Администратор</h5>
+                                                <p class="text-muted small">Управление платформой и пользователями</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Сообщение о выборе роли -->
+                                    <div class="alert alert-warning mt-3" id="roleAlert" style="display: none;">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Пожалуйста, выберите тип аккаунта
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Дополнительная информация для тренера -->
+                        <div class="form-section" id="trainerInfo" style="display: none;">
+                            <h4 class="section-title">Информация для тренера</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-graduation-cap me-1"></i>Специализация *
+                                    </label>
+                                    {{ form.specialization(class="form-control", placeholder="Фитнес, йога, кроссфит...") }}
+                                    {% if form.specialization.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.specialization.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-calendar-alt me-1"></i>Опыт работы (лет) *
+                                    </label>
+                                    {{ form.experience_years(class="form-control", type="number", min="0", max="50") }}
+                                    {% if form.experience_years.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.experience_years.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-certificate me-1"></i>Сертификация *
+                                </label>
+                                {{ form.certification(class="form-control", placeholder="Сертификаты и квалификации") }}
+                                {% if form.certification.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.certification.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-file-alt me-1"></i>О себе *
+                                </label>
+                                {{ form.bio(class="form-control", rows="3", placeholder="Расскажите о своем опыте и подходе к тренировкам") }}
+                                {% if form.bio.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.bio.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Фитнес-данные -->
+                        <div class="form-section">
+                            <h4 class="section-title">Фитнес-данные (опционально)</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-ruler-vertical me-1"></i>Рост (см)
+                                    </label>
+                                    {{ form.height(class="form-control", type="number", min="100", max="250") }}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-weight me-1"></i>Вес (кг)
+                                    </label>
+                                    {{ form.weight(class="form-control", type="number", min="30", max="200") }}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-chart-line me-1"></i>Уровень подготовки
+                                    </label>
+                                    {{ form.fitness_level(class="form-select") }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-heartbeat me-1"></i>Медицинские противопоказания
+                                </label>
+                                {{ form.medical_conditions(class="form-control", rows="2", placeholder="Аллергии, хронические заболевания и т.д.") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-allergies me-1"></i>Аллергии
+                                </label>
+                                {{ form.allergies(class="form-control", placeholder="Пищевые аллергии, непереносимость и т.д.") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Соглашения -->
+                        <div class="form-check mb-3">
+                            {{ form.agree_terms(class="form-check-input") }}
+                            <label class="form-check-label">
+                                Я согласен с <a href="#" class="text-decoration-none">условиями использования</a> и 
+                                <a href="#" class="text-decoration-none">политикой конфиденциальности</a>
+                            </label>
+                            {% if form.agree_terms.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.agree_terms.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="auth-footer">
+                    <p class="mb-0">
+                        Уже есть аккаунт? 
+                        <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold">
+                            Войти в систему
+                        </a>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>Вернуться на главную
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Элементы DOM
+    const roleCards = document.querySelectorAll('.role-card');
+    const roleField = document.getElementById('roleField');
+    const trainerInfo = document.getElementById('trainerInfo');
+    const roleAlert = document.getElementById('roleAlert');
+    let selectedRole = 'client'; // По умолчанию клиент
+    
+    // Выбор роли
+    roleCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Убираем выделение со всех карточек
+            roleCards.forEach(c => c.classList.remove('selected'));
+            
+            // Добавляем выделение выбранной
+            this.classList.add('selected');
+            
+            // Устанавливаем значение роли
+            selectedRole = this.dataset.role;
+            roleField.value = selectedRole;
+            
+            // Скрываем предупреждение
+            roleAlert.style.display = 'none';
+            
+            // Показываем/скрываем дополнительные поля для тренера
+            if (selectedRole === 'trainer') {
+                trainerInfo.style.display = 'block';
+                // Делаем поля тренера обязательными
+                document.querySelectorAll('#trainerInfo .form-control, #trainerInfo .form-select').forEach(field => {
+                    field.required = true;
+                });
+            } else {
+                trainerInfo.style.display = 'none';
+                // Убираем обязательность полей тренера
+                document.querySelectorAll('#trainerInfo .form-control, #trainerInfo .form-select').forEach(field => {
+                    field.required = false;
+                });
+            }
+        });
+    });
+    
+    // Выбираем клиента по умолчанию
+    document.querySelector('[data-role="client"]').click();
+    
+    // Проверка силы пароля
+    const passwordInput = document.getElementById('password');
+    const strengthBar = document.getElementById('passwordStrength');
+    
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        let strength = 0;
+        
+        // Проверка длины
+        if (password.length >= 8) strength += 25;
+        
+        // Проверка наличия заглавных и строчных букв
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+        
+        // Проверка наличия цифр
+        if (/\d/.test(password)) strength += 25;
+        
+        // Проверка наличия специальных символов
+        if (/[^a-zA-Z0-9]/.test(password)) strength += 25;
+        
+        // Обновляем индикатор
+        strengthBar.style.width = strength + '%';
+        
+        // Цвет индикатора
+        if (strength < 50) {
+            strengthBar.style.backgroundColor = '#dc3545'; // Красный
+        } else if (strength < 75) {
+            strengthBar.style.backgroundColor = '#ffc107'; // Желтый
+        } else {
+            strengthBar.style.backgroundColor = '#28a745'; // Зеленый
+        }
+    });
+    
+    // Валидация формы перед отправкой
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Проверка выбора роли
+        if (!selectedRole) {
+            roleAlert.style.display = 'block';
+            isValid = false;
+        }
+        
+        // Проверка пароля
+        const password = passwordInput.value;
+        const confirmPassword = document.querySelector('[name="confirm_password"]').value;
+        
+        if (password !== confirmPassword) {
+            alert('Пароли не совпадают!');
+            isValid = false;
+        }
+        
+        if (password.length < 8) {
+            alert('Пароль должен содержать минимум 8 символов!');
+            isValid = false;
+        }
+        
+        // Проверка сложности пароля
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        
+        if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+            alert('Пароль должен содержать заглавные и строчные буквы, а также хотя бы одну цифру!');
+            isValid = false;
+        }
+        
+        // Если форма невалидна, отменяем отправку
+        if (!isValid) {
+            e.preventDefault();
+        }
+        
+        return isValid;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Добавить цель</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('progress.add_goal') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Название цели</label>
+                            {{ form.title(class="form-control", placeholder="Например: Похудеть на 5 кг") }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.title.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="goal_type" class="form-label">Тип цели</label>
+                            {{ form.goal_type(class="form-control") }}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="target_value" class="form-label">Целевое значение</label>
+                                {{ form.target_value(class="form-control", placeholder="Например: 5") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="unit" class="form-label">Единица измерения</label>
+                                {{ form.unit(class="form-control", placeholder="кг, км, ккал") }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">Дата начала</label>
+                                {{ form.start_date(class="form-control", type="date") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="target_date" class="form-label">Целевая дата</label>
+                                {{ form.target_date(class="form-control", type="date") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            {{ form.description(class="form-control", rows="3", placeholder="Подробное описание цели...") }}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('progress.goals') }}" class="btn btn-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Сохранить цель</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Советы по постановке целей</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">✅ Ставьте конкретные цели</li>
+                        <li class="mb-2">✅ Измеряйте прогресс</li>
+                        <li class="mb-2">✅ Устанавливайте реальные сроки</li>
+                        <li class="mb-2">✅ Разбивайте большие цели на маленькие шаги</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

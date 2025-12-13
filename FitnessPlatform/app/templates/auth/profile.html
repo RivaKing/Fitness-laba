@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+
+{% block title %}Мой профиль - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 10px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(50%, -50%);
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid white;
+        object-fit: cover;
+        margin-bottom: 15px;
+    }
+    
+    .profile-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .stat-item {
+        padding: 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 12px 20px;
+        transition: all 0.3s;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #4e73df;
+        border-bottom-color: #4e73df;
+        background: transparent;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: #4e73df;
+        border-bottom-color: rgba(78, 115, 223, 0.3);
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 20px;
+        border-left: 4px solid #4e73df;
+    }
+    
+    .section-title {
+        color: #495057;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-title i {
+        color: #4e73df;
+    }
+    
+    .badge-role {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    .badge-client {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .badge-trainer {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .badge-admin {
+        background-color: #fce4ec;
+        color: #c2185b;
+    }
+    
+    /* Добавляем стиль для скрытия неактивных табов */
+    .tab-content .tab-pane:not(.show) {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Заголовок профиля -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                {% if current_user.profile.avatar_url %}
+                    <img src="{{ current_user.profile.avatar_url }}" alt="Аватар" class="profile-avatar">
+                {% else %}
+                    <div class="profile-avatar bg-white text-primary d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                {% endif %}
+                <button class="btn btn-light btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#avatarModal">
+                    <i class="fas fa-camera me-1"></i>Сменить фото
+                </button>
+            </div>
+            <div class="col-md-9">
+                <h2 class="mb-2">{{ current_user.full_name }}</h2>
+                <p class="mb-1">
+                    <span class="badge badge-role badge-{{ current_user.role }}">
+                        {{ current_user.get_role_display() }}
+                    </span>
+                </p>
+                <p class="mb-1">
+                    <i class="fas fa-envelope me-2"></i>{{ current_user.email }}
+                </p>
+                {% if current_user.profile.phone %}
+                    <p class="mb-0">
+                        <i class="fas fa-phone me-2"></i>{{ current_user.profile.phone }}
+                    </p>
+                {% endif %}
+                
+                {% if current_user.is_trainer %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('auth.trainer_profile') }}" class="btn btn-light">
+                            <i class="fas fa-user-tie me-1"></i>Профиль тренера
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value">{{ current_user.get_upcoming_trainings()|length }}</span>
+                    <span class="stat-label">Предстоящие тренировки</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ current_user.get_past_trainings()|length }}</span>
+                    <span class="stat-label">Завершенные тренировки</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ current_user.get_active_goals()|length }}</span>
+                    <span class="stat-label">Активные цели</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ current_user.get_unread_notifications_count() }}</span>
+                    <span class="stat-label">Непрочитанные уведомления</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Навигация -->
+    <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">
+                <i class="fas fa-user me-1"></i>Личная информация
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="fitness-tab" data-bs-toggle="tab" data-bs-target="#fitness" type="button" role="tab" aria-controls="fitness" aria-selected="false">
+                <i class="fas fa-running me-1"></i>Фитнес-данные
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="medical-tab" data-bs-toggle="tab" data-bs-target="#medical" type="button" role="tab" aria-controls="medical" aria-selected="false">
+                <i class="fas fa-heartbeat me-1"></i>Медицинская информация
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
+                <i class="fas fa-cog me-1"></i>Настройки
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Контент табов -->
+    <div class="tab-content" id="profileTabsContent">
+        <!-- Личная информация -->
+        <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+            <form method="POST" action="{{ url_for('auth.profile') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-user-circle"></i>Основная информация
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Полное имя *</label>
+                            {{ form.full_name(class="form-control", required=true) }}
+                            {% if form.full_name.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.full_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Дата рождения</label>
+                            {{ form.date_of_birth(class="form-control", type="date") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Пол</label>
+                            {{ form.gender(class="form-select") }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Телефон</label>
+                            {{ form.phone(class="form-control", placeholder="+7 (999) 123-45-67") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">О себе</label>
+                        {{ form.bio(class="form-control", rows="3", placeholder="Расскажите о себе...") }}
+                    </div>
+                    
+                    <!-- Кнопки сохранения для этой вкладки -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Назад
+                        </a>
+                        
+                        <div>
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-key me-1"></i>Сменить пароль
+                            </a>
+                            <button type="submit" class="btn btn-primary" name="save_personal">
+                                <i class="fas fa-save me-1"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Фитнес-данные -->
+        <div class="tab-pane fade" id="fitness" role="tabpanel" aria-labelledby="fitness-tab">
+            <form method="POST" action="{{ url_for('auth.profile') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-running"></i>Фитнес-данные
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Рост (см)</label>
+                            {{ form.height(class="form-control", type="number", min="50", max="250") }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Вес (кг)</label>
+                            {{ form.weight(class="form-control", type="number", min="20", max="300") }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Уровень подготовки</label>
+                            {{ form.fitness_level(class="form-select") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Предпочитаемые активности</label>
+                        {{ form.preferred_activities(class="form-control", placeholder="Например: йога, бег, силовые тренировки") }}
+                        <div class="form-text">Перечислите активности через запятую</div>
+                    </div>
+                    
+                    <!-- Кнопки сохранения для этой вкладки -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Назад
+                        </a>
+                        
+                        <div>
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-key me-1"></i>Сменить пароль
+                            </a>
+                            <button type="submit" class="btn btn-primary" name="save_fitness">
+                                <i class="fas fa-save me-1"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Медицинская информация -->
+        <div class="tab-pane fade" id="medical" role="tabpanel" aria-labelledby="medical-tab">
+            <form method="POST" action="{{ url_for('auth.profile') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-heartbeat"></i>Медицинская информация
+                    </h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Эта информация помогает тренерам подбирать подходящие тренировки
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Медицинские противопоказания</label>
+                        {{ form.medical_conditions(class="form-control", rows="3", 
+                            placeholder="Хронические заболевания, ограничения по здоровью...") }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Аллергии</label>
+                            {{ form.allergies(class="form-control", placeholder="Пищевые, лекарственные аллергии...") }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Лекарства</label>
+                            {{ form.medications(class="form-control", placeholder="Принимаемые препараты...") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Экстренный контакт</label>
+                        {{ form.emergency_contact(class="form-control", 
+                            placeholder="Имя и телефон контактного лица") }}
+                    </div>
+                    
+                    <!-- Кнопки сохранения для этой вкладки -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Назад
+                        </a>
+                        
+                        <div>
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-key me-1"></i>Сменить пароль
+                            </a>
+                            <button type="submit" class="btn btn-primary" name="save_medical">
+                                <i class="fas fa-save me-1"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Настройки -->
+        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+            <form method="POST" action="{{ url_for('auth.profile') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-cog"></i>Настройки уведомлений
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.email_notifications(class="form-check-input", role="switch") }}
+                                <label class="form-check-label">Email уведомления</label>
+                                <div class="form-text">Уведомления о тренировках, новостях</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.push_notifications(class="form-check-input", role="switch") }}
+                                <label class="form-check-label">Push уведомления</label>
+                                <div class="form-text">Браузерные уведомления</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Язык</label>
+                            {{ form.language(class="form-select") }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Часовой пояс</label>
+                            {{ form.timezone(class="form-select") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Кнопки сохранения для этой вкладки -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Назад
+                        </a>
+                        
+                        <div>
+                            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-key me-1"></i>Сменить пароль
+                            </a>
+                            <button type="submit" class="btn btn-primary" name="save_settings">
+                                <i class="fas fa-save me-1"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для смены аватара -->
+<div class="modal fade" id="avatarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Смена фото профиля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-preview mb-3 mx-auto" style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #dee2e6; overflow: hidden;">
+                        <img id="avatarPreview" src="{{ current_user.profile.avatar_url if current_user.profile.avatar_url else url_for('static', filename='img/default-avatar.png') }}" 
+                             alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+                
+                <form id="avatarForm" action="#" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Загрузить фото</label>
+                        <input type="file" class="form-control" id="avatarFile" accept="image/*">
+                        <div class="form-text">Поддерживаемые форматы: JPG, PNG, GIF. Максимальный размер: 5MB</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Или введите URL</label>
+                        <input type="url" class="form-control" id="avatarUrl" placeholder="https://example.com/avatar.jpg">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="saveAvatar()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Предпросмотр аватара
+    const avatarFile = document.getElementById('avatarFile');
+    const avatarPreview = document.getElementById('avatarPreview');
+    
+    if (avatarFile) {
+        avatarFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+                
+                // Очищаем URL поле
+                document.getElementById('avatarUrl').value = '';
+            }
+        });
+    }
+    
+    const avatarUrl = document.getElementById('avatarUrl');
+    if (avatarUrl) {
+        avatarUrl.addEventListener('input', function() {
+            if (this.value) {
+                avatarPreview.src = this.value;
+                // Очищаем файловое поле
+                avatarFile.value = '';
+            }
+        });
+    }
+    
+    // Активация табов при нажатии на Enter
+    document.querySelectorAll('#profileTabs .nav-link').forEach(tab => {
+        tab.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                this.click();
+            }
+        });
+    });
+    
+    // Инициализация табов Bootstrap
+    const triggerTabList = [].slice.call(document.querySelectorAll('#profileTabs button'))
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    });
+});
+
+function saveAvatar() {
+    const avatarUrl = document.getElementById('avatarUrl').value;
+    const avatarFile = document.getElementById('avatarFile').files[0];
+    
+    if (avatarFile) {
+        // Здесь должен быть код загрузки файла на сервер
+        alert('Загрузка файла пока не реализована. Используйте URL.');
+    } else if (avatarUrl) {
+        // Сохраняем URL через AJAX
+        fetch('{{ url_for("auth.profile") }}/update-avatar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({avatar_url: avatarUrl})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при сохранении');
+        });
+    } else {
+        alert('Выберите файл или введите URL');
+    }
+}
+</script>
+{% endblock %}

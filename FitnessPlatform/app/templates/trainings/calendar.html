@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Календарь тренировок - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css'>
+<style>
+    #calendar {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 10px;
+        color: white;
+    }
+    
+    .calendar-nav button {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .calendar-nav button:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .fc {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    .fc-header-toolbar {
+        margin-bottom: 1.5em !important;
+    }
+    
+    .fc-button {
+        background-color: #4e73df !important;
+        border-color: #4e73df !important;
+    }
+    
+    .fc-button:hover {
+        background-color: #224abe !important;
+        border-color: #224abe !important;
+    }
+    
+    .fc-button-primary:not(:disabled).fc-button-active {
+        background-color: #224abe !important;
+        border-color: #224abe !important;
+    }
+    
+    .fc-event {
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .training-list {
+        margin-top: 30px;
+    }
+    
+    .training-day {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .day-header {
+        color: #4e73df;
+        border-bottom: 2px solid #4e73df;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .no-trainings {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .no-trainings i {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Заголовок -->
+    <div class="calendar-header">
+        <div>
+            <h3 class="mb-1">
+                <i class="fas fa-calendar-alt me-2"></i>Календарь тренировок
+            </h3>
+            <p class="mb-0">Просмотр и управление расписанием тренировок</p>
+        </div>
+        
+        <div class="calendar-nav">
+            <button onclick="window.location.href='{{ url_for('trainings.my_trainings') }}'" class="me-2">
+                <i class="fas fa-list me-1"></i>Список
+            </button>
+            <button onclick="window.location.href='{{ url_for('trainings.training_list') }}'">
+                <i class="fas fa-search me-1"></i>Найти тренировки
+            </button>
+        </div>
+    </div>
+    
+    <!-- Календарь -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Список тренировок по дням -->
+    <div class="training-list">
+        <h4 class="mb-3">Тренировки по дням</h4>
+        
+        {% if training_by_date %}
+            {% for day, trainings in training_by_date.items() %}
+                <div class="training-day">
+                    <h5 class="day-header">
+                        <i class="fas fa-calendar-day me-2"></i>
+                        {{ day.strftime('%d %B %Y') }} ({{ day.strftime('%A') }})
+                    </h5>
+                    
+                    {% for training in trainings %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="card-title mb-1">{{ training.title }}</h6>
+                                        <div class="d-flex align-items-center text-muted mb-2">
+                                            <i class="fas fa-clock me-2"></i>
+                                            <span>{{ training.schedule_time.strftime('%H:%M') }}</span>
+                                            <span class="mx-2">•</span>
+                                            <i class="fas fa-user-tie me-2"></i>
+                                            <span>{{ training.trainer_creator.username }}</span>
+                                            <span class="mx-2">•</span>
+                                            <span class="badge bg-primary">{{ training.training_type }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <a href="{{ url_for('trainings.detail', training_id=training.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-info-circle me-1"></i>Подробнее
+                                        </a>
+                                        {% if training.meeting_link %}
+                                            <a href="{{ training.meeting_link }}" target="_blank" 
+                                               class="btn btn-sm btn-success">
+                                                <i class="fas fa-video me-1"></i>Присоединиться
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-trainings">
+                <i class="fas fa-calendar-times"></i>
+                <h4>Нет тренировок на выбранный период</h4>
+                <p class="mb-4">Найдите и запишитесь на интересующие вас тренировки</p>
+                <a href="{{ url_for('trainings.training_list') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>Найти тренировки
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ru.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'ru',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        buttonText: {
+            today: 'Сегодня',
+            month: 'Месяц',
+            week: 'Неделя',
+            day: 'День',
+            list: 'Список'
+        },
+        navLinks: true,
+        editable: false,
+        selectable: true,
+        events: '{{ url_for("trainings.api_calendar") }}',
+        eventClick: function(info) {
+            info.jsEvent.preventDefault();
+            if (info.event.url) {
+                window.open(info.event.url, '_blank');
+            }
+        },
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false
+        },
+        eventColor: '#4e73df',
+        eventBackgroundColor: '#4e73df',
+        eventBorderColor: '#4e73df'
+    });
+    
+    calendar.render();
+    
+    // Кнопки навигации
+    document.querySelector('.fc-prev-button').innerHTML = '<i class="fas fa-chevron-left"></i>';
+    document.querySelector('.fc-next-button').innerHTML = '<i class="fas fa-chevron-right"></i>';
+    document.querySelector('.fc-today-button').innerHTML = '<i class="fas fa-calendar-day me-1"></i>Сегодня';
+});
+</script>
+{% endblock %}

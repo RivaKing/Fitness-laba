@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Все тренировки - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .training-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .training-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .training-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+    }
+    
+    .category-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .training-image {
+        height: 180px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+    }
+    
+    .admin-actions {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Заголовок и кнопки -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-running me-2"></i>Все тренировки</h1>
+            <p class="text-muted mb-0">Найдите подходящую тренировку и запишитесь прямо сейчас</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            {% if current_user.is_authenticated and (current_user.role == 'trainer' or current_user.role == 'admin') %}
+            <a href="{{ url_for('trainings.create_training') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Создать тренировку
+            </a>
+            {% endif %}
+            
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('trainings.my_trainings') }}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar-alt me-2"></i>Мои тренировки
+            </a>
+            {% endif %}
+            
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <a href="{{ url_for('trainings.admin_pending_trainings') }}" class="btn btn-warning">
+                <i class="fas fa-tasks me-2"></i>На проверку
+                {% if get_pending_trainings_count() > 0 %}
+                <span class="badge bg-danger">{{ get_pending_trainings_count() }}</span>
+                {% endif %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Категория</label>
+                    <select name="category" class="form-select">
+                        <option value="">Все категории</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.args.get('category')|string == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">Тип</label>
+                    <select name="type" class="form-select">
+                        <option value="">Все типы</option>
+                        <option value="group" {% if request.args.get('type') == 'group' %}selected{% endif %}>Групповая</option>
+                        <option value="individual" {% if request.args.get('type') == 'individual' %}selected{% endif %}>Индивидуальная</option>
+                        <option value="recorded" {% if request.args.get('type') == 'recorded' %}selected{% endif %}>Запись</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">Сложность</label>
+                    <select name="difficulty" class="form-select">
+                        <option value="">Любая</option>
+                        <option value="beginner" {% if request.args.get('difficulty') == 'beginner' %}selected{% endif %}>Начинающий</option>
+                        <option value="intermediate" {% if request.args.get('difficulty') == 'intermediate' %}selected{% endif %}>Средний</option>
+                        <option value="advanced" {% if request.args.get('difficulty') == 'advanced' %}selected{% endif %}>Продвинутый</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Дата</label>
+                    <input type="date" name="date" class="form-control" value="{{ request.args.get('date', '') }}">
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Фильтровать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Список тренировок -->
+    {% if trainings %}
+    <div class="row">
+        {% for training in trainings %}
+        <div class="col-md-4 mb-4">
+            <div class="card training-card h-100">
+                <!-- Статус тренировки -->
+                <div class="training-status">
+                    {% if training.status == 'active' %}
+                    <span class="badge bg-success">Активна</span>
+                    {% elif training.status == 'completed' %}
+                    <span class="badge bg-secondary">Завершена</span>
+                    {% elif training.status == 'cancelled' %}
+                    <span class="badge bg-danger">Отменена</span>
+                    {% elif training.status == 'draft' %}
+                    <span class="badge bg-warning text-dark">Черновик</span>
+                    {% elif training.status == 'pending' %}
+                    <span class="badge bg-info text-white">На проверке</span>
+                    {% elif training.status == 'rejected' %}
+                    <span class="badge bg-danger">Отклонена</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ training.status }}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Изображение тренировки -->
+                <div class="training-image d-flex align-items-center justify-content-center text-white">
+                    <i class="fas fa-running fa-3x"></i>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Категория и сложность -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        {% if training.category %}
+                        <span class="badge bg-primary category-badge">{{ training.category.name }}</span>
+                        {% endif %}
+                        
+                        <span class="badge bg-info category-badge">
+                            {% if training.difficulty == 'beginner' %}
+                            Начинающий
+                            {% elif training.difficulty == 'intermediate' %}
+                            Средний
+                            {% else %}
+                            Продвинутый
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <!-- Заголовок и описание -->
+                    <h5 class="card-title">{{ training.title }}</h5>
+                    <p class="card-text text-muted">{{ training.short_description or 'Описание отсутствует'|truncate(80) }}</p>
+                    
+                    <!-- Информация о тренере -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-user-tie me-1"></i>
+                            Тренер: {{ training.trainer_user.username }}
+                        </small>
+                    </div>
+                    
+                    <!-- Время и длительность -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            {{ training.schedule_time|format_datetime }}
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ training.duration }} минут
+                        </small>
+                    </div>
+                    
+                    <!-- Участники и цена -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-users me-1"></i>
+                                {{ training.registrations.filter_by(status='registered').count() }}/{{ training.max_participants }}
+                            </small>
+                            {% if training.price > 0 %}
+                            <br>
+                            <small class="text-success">
+                                <i class="fas fa-ruble-sign me-1"></i>
+                                {{ training.price }} ₽
+                            </small>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Рейтинг -->
+                        {% if training.average_rating > 0 %}
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            {{ "%.1f"|format(training.average_rating) }}
+                            <small class="text-muted">({{ training.total_ratings }})</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Кнопки действий админа (для черновиков и на проверке) -->
+                    {% if current_user.is_authenticated and current_user.role == 'admin' and training.status in ['draft', 'pending'] %}
+                    <div class="admin-actions">
+                        <div class="btn-group btn-group-sm w-100">
+                            <form method="POST" action="{{ url_for('trainings.approve_training', training_id=training.id) }}" 
+                                  style="flex: 1;">
+                                <button type="submit" class="btn btn-success btn-sm w-100" 
+                                        onclick="return confirm('Одобрить тренировку «{{ training.title }}»?')">
+                                    <i class="fas fa-check me-1"></i>Одобрить
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-danger btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#rejectModal{{ training.id }}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Модальное окно отклонения -->
+                        <div class="modal fade" id="rejectModal{{ training.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Отклонить тренировку</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('trainings.reject_training', training_id=training.id) }}">
+                                        <div class="modal-body">
+                                            <p>Вы собираетесь отклонить тренировку <strong>"{{ training.title }}"</strong></p>
+                                            <div class="mb-3">
+                                                <label class="form-label">Причина отклонения</label>
+                                                <textarea name="reason" class="form-control" rows="3" 
+                                                          placeholder="Укажите причину отклонения..." required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                            <button type="submit" class="btn btn-danger">Отклонить</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('trainings.detail', training_id=training.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-info-circle me-1"></i>Подробнее
+                        </a>
+                        
+                        {% if current_user.is_authenticated %}
+                            {% if training.trainer_user_id != current_user.id %}
+                                {% set registration = training.registrations.filter_by(user_id=current_user.id).first() %}
+                                {% if registration %}
+                                    {% if registration.status == 'registered' %}
+                                    <button class="btn btn-success btn-sm" disabled>
+                                        <i class="fas fa-check me-1"></i>Записан
+                                    </button>
+                                    {% elif registration.status == 'attended' %}
+                                    <button class="btn btn-secondary btn-sm" disabled>
+                                        <i class="fas fa-user-check me-1"></i>Посетил
+                                    </button>
+                                    {% elif registration.status == 'cancelled' and training.is_upcoming and not training.is_full %}
+                                    <!-- Показываем кнопку "Записаться" для отмененных регистраций -->
+                                    <form method="POST" action="{{ url_for('trainings.register', training_id=training.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-calendar-plus me-1"></i>Записаться
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                {% elif training.is_upcoming and not training.is_full %}
+                                <form method="POST" action="{{ url_for('trainings.register', training_id=training.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-calendar-plus me-1"></i>Записаться
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Навигация по страницам">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('trainings.training_list', page=pagination.prev_num, **request.args) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('trainings.training_list', page=page, **request.args) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('trainings.training_list', page=pagination.next_num, **request.args) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Состояние без тренировок -->
+    <div class="empty-state">
+        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+        <h3>Тренировки не найдены</h3>
+        <p class="text-muted mb-4">Попробуйте изменить параметры фильтра или создайте первую тренировку</p>
+        
+        {% if current_user.is_authenticated and (current_user.role == 'trainer' or current_user.role == 'admin') %}
+        <a href="{{ url_for('trainings.create_training') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Создать первую тренировку
+        </a>
+        {% endif %}
+        
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('trainings.admin_pending_trainings') }}" class="btn btn-warning mt-2">
+            <i class="fas fa-tasks me-2"></i>Просмотр тренировок на проверке
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

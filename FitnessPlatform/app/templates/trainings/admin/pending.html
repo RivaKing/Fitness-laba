@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Тренировки на проверке - Админ-панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    .training-table {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+    }
+    
+    .action-buttons {
+        min-width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-tasks me-2"></i>Тренировки на проверке</h1>
+            <p class="text-muted mb-0">
+                Тренировки, ожидающие одобрения администратора
+                {% if pagination.total > 0 %}
+                <span class="badge bg-warning ms-2">{{ pagination.total }} шт.</span>
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('trainings.training_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Назад к списку
+            </a>
+            <a href="{{ url_for('trainings.create_training') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Создать тренировку
+            </a>
+        </div>
+    </div>
+    
+    {% if trainings %}
+    <div class="training-table">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%">Название</th>
+                        <th>Тренер</th>
+                        <th>Дата создания</th>
+                        <th>Дата проведения</th>
+                        <th>Статус</th>
+                        <th class="text-end action-buttons">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for training in trainings %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('trainings.detail', training_id=training.id) }}" class="text-decoration-none">
+                                <strong>{{ training.title }}</strong>
+                            </a>
+                            {% if training.short_description %}
+                            <div class="text-muted small mt-1">{{ training.short_description|truncate(50) }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-tie text-primary me-2"></i>
+                                {{ training.trainer_user.username }}
+                            </div>
+                        </td>
+                        <td>
+                            <small>{{ training.created_at|format_datetime('%d.%m.%Y') }}</small>
+                        </td>
+                        <td>
+                            <small>{{ training.schedule_time|format_datetime('%d.%m.%Y %H:%M') }}</small>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if training.status == 'draft' %}bg-warning text-dark
+                                {% elif training.status == 'pending' %}bg-info
+                                {% else %}bg-secondary{% endif %} status-badge">
+                                {% if training.status == 'draft' %}ЧЕРНОВИК
+                                {% elif training.status == 'pending' %}НА ПРОВЕРКЕ
+                                {% else %}{{ training.status|upper }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('trainings.detail', training_id=training.id) }}" 
+                                   class="btn btn-outline-primary" title="Просмотр">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('trainings.approve_training', training_id=training.id) }}" 
+                                      style="display: inline;">
+                                    <button type="submit" class="btn btn-success" 
+                                            onclick="return confirm('Одобрить тренировку «{{ training.title }}»?')"
+                                            title="Одобрить">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#rejectModal{{ training.id }}"
+                                        title="Отклонить">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Модальное окно отклонения (вложенное в строку) -->
+                    <div class="modal fade" id="rejectModal{{ training.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Отклонить тренировку</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('trainings.reject_training', training_id=training.id) }}">
+                                    <div class="modal-body">
+                                        <p>Вы собираетесь отклонить тренировку:</p>
+                                        <div class="alert alert-warning">
+                                            <strong>{{ training.title }}</strong><br>
+                                            <small class="text-muted">
+                                                Тренер: {{ training.trainer_user.username }}<br>
+                                                Дата: {{ training.schedule_time|format_datetime }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Причина отклонения *</label>
+                                            <textarea name="reason" class="form-control" rows="4" 
+                                                      placeholder="Укажите причину отклонения..." required></textarea>
+                                            <div class="form-text">Эта причина будет отправлена тренеру</div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                        <button type="submit" class="btn btn-danger">Отклонить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Пагинация -->
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Навигация" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('trainings.admin_pending_trainings', page=pagination.prev_num) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('trainings.admin_pending_trainings', page=page) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('trainings.admin_pending_trainings', page=pagination.next_num) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Состояние без тренировок на проверке -->
+    <div class="empty-state text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-check-circle fa-4x text-success"></i>
+        </div>
+        <h3 class="mb-3">Все тренировки проверены!</h3>
+        <p class="text-muted mb-4">Нет тренировок, ожидающих проверки</p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('trainings.training_list') }}" class="btn btn-primary">
+                <i class="fas fa-running me-2"></i>Перейти к тренировкам
+            </a>
+            <a href="{{ url_for('trainings.create_training') }}" class="btn btn-outline-primary">
+                <i class="fas fa-plus me-2"></i>Создать тренировку
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

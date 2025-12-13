@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд прогресса - Фитнес Платформа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 10px;
+        border: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .progress-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .activity-item {
+        border-left: 4px solid #4e73df;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .goal-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .achievement-badge {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-chart-line me-2"></i>Дашборд прогресса</h1>
+            <p class="text-muted mb-0">Обзор вашей фитнес-активности и достижений</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Добавить активность
+            </a>
+            <a href="{{ url_for('progress.add_goal') }}" class="btn btn-outline-primary">
+                <i class="fas fa-bullseye me-2"></i>Добавить цель
+            </a>
+        </div>
+    </div>
+
+    <!-- Основная статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card border-left-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Всего активностей</h6>
+                            <h3 class="mb-0">{{ total_activities }}</h3>
+                        </div>
+                        <div class="stat-icon bg-primary text-white">
+                            <i class="fas fa-running"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card border-left-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Сожжено калорий</h6>
+                            <h3 class="mb-0">{{ total_calories|int }}</h3>
+                        </div>
+                        <div class="stat-icon bg-success text-white">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card border-left-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Дистанция (км)</h6>
+                            <h3 class="mb-0">{{ "%.1f"|format(total_distance) }}</h3>
+                        </div>
+                        <div class="stat-icon bg-info text-white">
+                            <i class="fas fa-route"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card border-left-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Время (мин)</h6>
+                            <h3 class="mb-0">{{ total_duration|int }}</h3>
+                        </div>
+                        <div class="stat-icon bg-warning text-white">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики и детали -->
+    <div class="row">
+        <!-- Левая колонка: График и последние активности -->
+        <div class="col-lg-8">
+            <!-- График активности за месяц -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Активность за последний месяц</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="activityChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Последние активности -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Последние активности</h5>
+                    <a href="{{ url_for('progress.history') }}" class="btn btn-sm btn-outline-primary">
+                        Вся история <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                    <div class="list-group list-group-flush">
+                        {% for activity in recent_activities %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ activity.activity_type|title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ activity.date.strftime('%d.%m.%Y') }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    {% if activity.duration %}
+                                    <div class="text-primary">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ activity.duration }} мин
+                                    </div>
+                                    {% endif %}
+                                    {% if activity.calories_burned %}
+                                    <div class="text-success">
+                                        <i class="fas fa-fire me-1"></i>
+                                        {{ activity.calories_burned }} ккал
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-running fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Нет записей о активности</p>
+                        <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Добавить первую активность
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Цели и достижения -->
+        <div class="col-lg-4">
+            <!-- Активные цели -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Активные цели</h5>
+                    <a href="{{ url_for('progress.goals') }}" class="btn btn-sm btn-outline-primary">
+                        Все цели <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if active_goals %}
+                    {% for goal in active_goals %}
+                    <div class="goal-card mb-3">
+                        <h6 class="mb-2">{{ goal.title }}</h6>
+                        
+                        <!-- Прогресс-бар -->
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ goal.progress_percentage }}%;"
+                                 aria-valuenow="{{ goal.progress_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ goal.progress_percentage|int }}% завершено
+                            </small>
+                            <small class="text-muted">
+                                До {{ goal.target_date.strftime('%d.%m') }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-bullseye fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Нет активных целей</p>
+                        <a href="{{ url_for('progress.add_goal') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Добавить цель
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Последние достижения -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Последние достижения</h5>
+                    <a href="{{ url_for('progress.achievements') }}" class="btn btn-sm btn-outline-primary">
+                        Все <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_achievements %}
+                    <div class="list-group list-group-flush">
+                        {% for achievement in recent_achievements %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="achievement-badge me-3">
+                                    <i class="fas fa-{{ achievement.icon or 'trophy' }}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{{ achievement.title }}</h6>
+                                    <small class="text-muted">
+                                        {{ achievement.unlocked_at.strftime('%d.%m.%Y') if achievement.unlocked_at else 'Недавно' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Нет достижений</p>
+                        <small class="text-muted">Выполняйте цели, чтобы получать достижения!</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Статистика за неделю -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>За последнюю неделю</h5>
+                </div>
+                <div class="card-body">
+                    {% if week_stats %}
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="text-primary">
+                                <i class="fas fa-running fa-2x mb-2"></i>
+                                <h5>{{ week_stats.activities }}</h5>
+                                <small>Активности</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-success">
+                                <i class="fas fa-fire fa-2x mb-2"></i>
+                                <h5>{{ week_stats.calories }}</h5>
+                                <small>Ккал сожжено</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-info">
+                                <i class="fas fa-route fa-2x mb-2"></i>
+                                <h5>{{ "%.1f"|format(week_stats.distance) }}</h5>
+                                <small>Км пройдено</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <h5>{{ week_stats.duration }}</h5>
+                                <small>Минут</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Нет данных за неделю</p>
+                        <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Добавить активность
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Получаем данные для графика
+    const chartLabels = {{ chart_labels|tojson }};
+    const chartDuration = {{ chart_duration|tojson }};
+    const chartCalories = {{ chart_calories|tojson }};
+    
+    if (chartLabels.length > 0) {
+        // Создаем график
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Длительность (мин)',
+                        data: chartDuration,
+                        borderColor: '#4e73df',
+                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Калории',
+                        data: chartCalories,
+                        borderColor: '#1cc88a',
+                        backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [2]
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // Если нет данных, скрываем график
+        document.getElementById('activityChart').parentElement.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Недостаточно данных для построения графика</p>
+                <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-2"></i>Добавить активность
+                </a>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}История активности - Фитнес Платформа{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-history me-2"></i>История активности</h1>
+        <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Добавить активность
+        </a>
+    </div>
+    
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    {{ form.date_from.label(class="form-label") }}
+                    {{ form.date_from(class="form-control", type="date") }}
+                </div>
+                
+                <div class="col-md-3">
+                    {{ form.date_to.label(class="form-label") }}
+                    {{ form.date_to(class="form-control", type="date") }}
+                </div>
+                
+                <div class="col-md-3">
+                    {{ form.activity_type.label(class="form-label") }}
+                    {{ form.activity_type(class="form-select") }}
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Фильтровать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Статистика по фильтру -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Количество</h6>
+                    <h3>{{ stats.count }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Общее время</h6>
+                    <h3>{{ stats.total_duration }} мин</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Калории</h6>
+                    <h3>{{ stats.total_calories }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Дистанция</h6>
+                    <h3>{{ "%.1f"|format(stats.total_distance) }} км</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Таблица истории -->
+    {% if progress_entries.items %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип активности</th>
+                    <th>Длительность</th>
+                    <th>Калории</th>
+                    <th>Дистанция</th>
+                    <th>Вес</th>
+                    <th>Заметки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in progress_entries.items %}
+                <tr>
+                    <td>{{ entry.date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ entry.activity_type|title }}</td>
+                    <td>{{ entry.duration }} мин</td>
+                    <td>{{ entry.calories_burned or '-' }}</td>
+                    <td>{{ entry.distance or '-' }} км</td>
+                    <td>{{ entry.weight or '-' }} кг</td>
+                    <td>{{ entry.notes|truncate(50) if entry.notes else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Пагинация -->
+    {% if progress_entries.pages > 1 %}
+    <nav aria-label="Навигация" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if progress_entries.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('progress.history', page=progress_entries.prev_num, **request.args) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page in progress_entries.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == progress_entries.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('progress.history', page=page, **request.args) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if progress_entries.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('progress.history', page=progress_entries.next_num, **request.args) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+        <h3 class="mb-3">История пуста</h3>
+        <p class="text-muted mb-4">У вас пока нет записей о активности</p>
+        <a href="{{ url_for('progress.add_progress') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Добавить первую активность
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
