@@ -11,7 +11,7 @@ Flask-Moment==1.0.5
 Flask-RESTX==1.1.0
 
 # Работа с данными и БД
-Werkzeug==2.3.6
+Werkzeug==2.3.7
 WTForms==3.0.1
 python-dotenv==1.0.0
 SQLAlchemy==1.4.46
