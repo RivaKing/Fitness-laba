@@ -1,6 +1,6 @@
 **Компиляция базы знаний:**
-python create_bd.py
+FitnessPlatform/create_bd.py
 **Запуск сервера:**
-python run.py
+FitnessPlatform/python run.py
 **Приложение доступно по адрессу:**
 http://127.0.0.1:5000/
