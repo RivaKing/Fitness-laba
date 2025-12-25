@@ -24,7 +24,7 @@ python FitnessPlatform/create_bd.py
 
 ```bash
 python FitnessPlatform/run.py
-
+```
 ## Доступ к приложению
 
 После запуска сервера через файл `run.py` веб-приложение становится доступным локально.
